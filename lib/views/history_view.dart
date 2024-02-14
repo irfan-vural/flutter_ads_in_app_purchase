@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_ads_purchase_bestcase/models/Question.dart';
 import 'package:flutter_ads_purchase_bestcase/services/auth_service.dart';
 import 'package:flutter_ads_purchase_bestcase/views/helpers/question_card.dart';
+import 'package:provider/provider.dart';
 
 class HistoryView extends StatefulWidget {
   const HistoryView({super.key});
@@ -38,7 +39,7 @@ class _HistoryViewState extends State<HistoryView> {
   }
 
   Future getUserQuestionsList() async {
-    final uid = AuthService().currentUser?.uid;
+    final uid = context.read<AuthService>().currentUser?.uid;
 
     var data = await FirebaseFirestore.instance
         .collection('users')

@@ -6,6 +6,7 @@ import 'package:flutter_ads_purchase_bestcase/extensions/string_extension.dart';
 import 'package:flutter_ads_purchase_bestcase/models/Question.dart';
 import 'package:flutter_ads_purchase_bestcase/services/auth_service.dart';
 import 'package:flutter_ads_purchase_bestcase/views/history_view.dart';
+import 'package:provider/provider.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -76,7 +77,7 @@ class _HomeViewState extends State<HomeView> {
                 padding: EdgeInsets.all(8.0),
                 child: Text("Account type: Free"),
               ),
-              Text("${AuthService().currentUser?.uid}")
+              Text("${context.read<AuthService>().currentUser?.uid}")
             ],
           ),
         )),
@@ -104,7 +105,7 @@ class _HomeViewState extends State<HomeView> {
                 _questionController.text = value;
               });
             },
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               helperText: "Enter A Question",
             ),
           ),
@@ -162,7 +163,7 @@ class _HomeViewState extends State<HomeView> {
 
     await FirebaseFirestore.instance
         .collection('users')
-        .doc(AuthService().currentUser?.uid)
+        .doc(context.read<AuthService>().currentUser?.uid)
         .collection("questions")
         .add(_question.toJson());
     _questionController.text = "";
