@@ -1,6 +1,7 @@
 class Account {
   String? uid;
   int bank = 0;
+  DateTime? nextFreeQuestion;
 
   Account();
 
@@ -8,5 +9,8 @@ class Account {
         'bank': bank,
       };
 
-  Account.fromSnapshot(snapshot, this.uid) : bank = snapshot.data()['bank'];
+  Account.fromSnapshot(snapshot, uid)
+      : bank = snapshot.data()['bank'],
+        nextFreeQuestion = snapshot.data()['nextFreeQuestion']?.toDate(),
+        uid = uid;
 }

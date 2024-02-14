@@ -9,6 +9,8 @@ import 'package:flutter_ads_purchase_bestcase/services/auth_service.dart';
 import 'package:flutter_ads_purchase_bestcase/views/history_view.dart';
 import 'package:provider/provider.dart';
 
+enum AppStatus { ready, waiting }
+
 class HomeView extends StatefulWidget {
   final Account account;
   const HomeView({super.key, required this.account});
@@ -22,8 +24,10 @@ class _HomeViewState extends State<HomeView> {
   TextEditingController _questionController = TextEditingController();
   bool _askBtnActive = false;
   Question _question = Question();
+  AppStatus? _appStatus;
   @override
   Widget build(BuildContext context) {
+    _setAppStatus();
     return GestureDetector(
       onTap: () {
         FocusManager.instance.primaryFocus?.unfocus();
@@ -88,42 +92,46 @@ class _HomeViewState extends State<HomeView> {
   }
 
   Widget _buildQuestForm() {
-    return Padding(
-      padding: const EdgeInsets.all(18.0),
-      child: Column(
-        children: [
-          Text(
-            "Should I",
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-          TextField(
-            maxLines: null,
-            textInputAction: TextInputAction.done,
-            keyboardType: TextInputType.multiline,
-            controller: _questionController,
-            onChanged: (value) {
-              setState(() {
-                _askBtnActive = value.isNotEmpty ? true : false;
-                _questionController.text = value;
-              });
-            },
-            decoration: const InputDecoration(
-              helperText: "Enter A Question",
+    if (_appStatus == AppStatus.ready) {
+      return Padding(
+        padding: const EdgeInsets.all(18.0),
+        child: Column(
+          children: [
+            Text(
+              "Should I",
+              style: Theme.of(context).textTheme.headlineMedium,
             ),
-          ),
-          ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
+            TextField(
+              maxLines: null,
+              textInputAction: TextInputAction.done,
+              keyboardType: TextInputType.multiline,
+              controller: _questionController,
+              onChanged: (value) {
+                setState(() {
+                  _askBtnActive = value.isNotEmpty ? true : false;
+                  _questionController.text = value;
+                });
+              },
+              decoration: const InputDecoration(
+                helperText: "Enter A Question",
               ),
-              onPressed: _askBtnActive ? answerQuestion : null,
-              child: const Text(
-                "Ask",
-                style: TextStyle(color: Colors.white),
-              )),
-          _questionAndAnswer(),
-        ],
-      ),
-    );
+            ),
+            ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                ),
+                onPressed: _askBtnActive ? answerQuestion : null,
+                child: const Text(
+                  "Ask",
+                  style: TextStyle(color: Colors.white),
+                )),
+            _questionAndAnswer(),
+          ],
+        ),
+      );
+    } else {
+      return _questionAndAnswer();
+    }
   }
 
   String _getAnswer() {
@@ -153,6 +161,18 @@ class _HomeViewState extends State<HomeView> {
     }
   }
 
+  void _setAppStatus() {
+    if (widget.account.bank > 0) {
+      setState(() {
+        _appStatus = AppStatus.ready;
+      });
+    } else {
+      setState(() {
+        _appStatus = AppStatus.waiting;
+      });
+    }
+  }
+
   Future<void> answerQuestion() async {
     setState(() {
       _answer = _getAnswer();
@@ -163,11 +183,19 @@ class _HomeViewState extends State<HomeView> {
     _question.answer = _answer;
     _question.timeCreated = DateTime.now();
 
+    widget.account.bank -= 1;
+    widget.account.nextFreeQuestion =
+        DateTime.now().add(const Duration(seconds: 5));
+
     await FirebaseFirestore.instance
         .collection('users')
-        .doc(context.read<AuthService>().currentUser?.uid)
+        .doc(widget.account.uid)
         .collection("questions")
         .add(_question.toJson());
     _questionController.text = "";
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.account.uid)
+        .update(widget.account.toJson());
   }
 }
