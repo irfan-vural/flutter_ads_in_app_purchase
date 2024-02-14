@@ -3,13 +3,15 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_ads_purchase_bestcase/extensions/string_extension.dart';
+import 'package:flutter_ads_purchase_bestcase/models/Account.dart';
 import 'package:flutter_ads_purchase_bestcase/models/Question.dart';
 import 'package:flutter_ads_purchase_bestcase/services/auth_service.dart';
 import 'package:flutter_ads_purchase_bestcase/views/history_view.dart';
 import 'package:provider/provider.dart';
 
 class HomeView extends StatefulWidget {
-  const HomeView({super.key});
+  final Account account;
+  const HomeView({super.key, required this.account});
 
   @override
   State<HomeView> createState() => _HomeViewState();
@@ -64,9 +66,9 @@ class _HomeViewState extends State<HomeView> {
           width: MediaQuery.of(context).size.width,
           child: Column(
             children: [
-              const Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Text("Desicions Left: ##"),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text("Desicions Left: ${widget.account.bank}"),
               ),
               const Spacer(),
               _buildQuestForm(),
