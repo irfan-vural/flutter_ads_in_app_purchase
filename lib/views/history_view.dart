@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_ads_purchase_bestcase/models/Question.dart';
+import 'package:flutter_ads_purchase_bestcase/services/admob_service.dart';
 import 'package:flutter_ads_purchase_bestcase/services/auth_service.dart';
 import 'package:flutter_ads_purchase_bestcase/views/helpers/question_card.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
 
 class HistoryView extends StatefulWidget {
@@ -32,7 +34,16 @@ class _HistoryViewState extends State<HistoryView> {
           child: ListView.builder(
         itemCount: _historyList.length,
         itemBuilder: (context, index) {
-          return QuestionCard(question: _historyList[index] as Question);
+          if (_historyList[index] is Question) {
+            return QuestionCard(question: _historyList[index] as Question);
+          } else if (_historyList[index] is BannerAd) {
+            return Container(
+                height: 60,
+                color: Colors.white,
+                child: AdWidget(ad: _historyList[index] as BannerAd));
+          } else {
+            return Container();
+          }
         },
       )),
     );
@@ -52,6 +63,20 @@ class _HistoryViewState extends State<HistoryView> {
       _historyList = List.from(data.docs.map(
         (e) => Question.fromSnapshot(e),
       ));
+
+      final adMobService = context.read<AdMobService>();
+      adMobService.initialization.then((value) {
+        for (int i = _historyList.length - 3; i >= 3; i -= 2) {
+          _historyList.insert(
+              i,
+              BannerAd(
+                adUnitId: adMobService.bannerAdUnitId!,
+                size: AdSize.fullBanner,
+                request: AdRequest(),
+                listener: adMobService.bannerAdListener,
+              )..load());
+        }
+      });
     });
   }
 }

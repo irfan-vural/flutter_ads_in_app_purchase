@@ -18,9 +18,10 @@ enum AppStatus { ready, waiting }
 class HomeView extends StatefulWidget {
   final Account account;
 
-  HomeView({required this.account});
+  const HomeView({super.key, required this.account});
 
   @override
+  // ignore: library_private_types_in_public_api
   _HomeViewState createState() => _HomeViewState();
 }
 
@@ -36,6 +37,7 @@ class _HomeViewState extends State<HomeView> {
   //ad related
   late AdMobService _adMobService;
   BannerAd? _bannerAd;
+  InterstitialAd? _interstitialAd;
 
   @override
   void initState() {
@@ -56,9 +58,10 @@ class _HomeViewState extends State<HomeView> {
         _bannerAd = BannerAd(
           adUnitId: _adMobService.bannerAdUnitId!,
           size: AdSize.fullBanner,
-          request: AdRequest(),
+          request: const AdRequest(),
           listener: _adMobService.bannerAdListener,
         )..load();
+        _createIntersitialAd();
       });
     });
   }
@@ -71,7 +74,7 @@ class _HomeViewState extends State<HomeView> {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.red,
-          title: Text(
+          title: const Text(
             "Decider",
             style: TextStyle(color: Colors.white),
           ),
@@ -80,7 +83,7 @@ class _HomeViewState extends State<HomeView> {
               padding: const EdgeInsets.only(right: 20.0),
               child: GestureDetector(
                 onTap: () {},
-                child: Icon(
+                child: const Icon(
                   Icons.shopping_bag,
                   color: Colors.white,
                 ),
@@ -90,10 +93,10 @@ class _HomeViewState extends State<HomeView> {
               padding: const EdgeInsets.only(right: 20.0),
               child: GestureDetector(
                 onTap: () {
-                  Navigator.of(context).push(
-                      MaterialPageRoute(builder: (context) => HistoryView()));
+                  Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => const HistoryView()));
                 },
-                child: Icon(
+                child: const Icon(
                   Icons.history,
                   color: Colors.white,
                 ),
@@ -111,15 +114,16 @@ class _HomeViewState extends State<HomeView> {
                   child: Text("Decisions Left: ${widget.account.bank}"),
                 ),
                 _nextFreeCountdown(),
-                Spacer(),
+                const Spacer(),
                 _buildQuestionForm(),
-                Spacer(flex: 3),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
+                const Spacer(flex: 3),
+                const Padding(
+                  padding: EdgeInsets.all(8.0),
                   child: Text("Account Type: Free"),
                 ),
                 Text("${context.read<AuthService>().currentUser?.uid}"),
                 if (_bannerAd != null)
+                  // ignore: sized_box_for_whitespace
                   Container(
                     height: 60,
                     child: AdWidget(ad: _bannerAd!),
@@ -139,12 +143,12 @@ class _HomeViewState extends State<HomeView> {
     if (_appStatus == AppStatus.ready) {
       return Column(
         children: [
-          Text("Should I", style: Theme.of(context).textTheme.headline4),
+          Text("Should I", style: Theme.of(context).textTheme.headlineMedium),
           Padding(
             padding:
                 const EdgeInsets.only(bottom: 10.0, left: 30.0, right: 30.0),
             child: TextField(
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 helperText: 'Enter A Question',
               ),
               maxLines: null,
@@ -153,14 +157,14 @@ class _HomeViewState extends State<HomeView> {
               textInputAction: TextInputAction.done,
               onChanged: (value) {
                 setState(() {
-                  _askBtnActive = value.length >= 1 ? true : false;
+                  _askBtnActive = value.isNotEmpty ? true : false;
                 });
               },
             ),
           ),
           ElevatedButton(
             onPressed: _askBtnActive == true ? _answerQuestion : null,
-            child: Text("Ask"),
+            child: const Text("Ask"),
           ),
           _questionAndAnswer()
         ],
@@ -187,7 +191,7 @@ class _HomeViewState extends State<HomeView> {
             padding: const EdgeInsets.only(top: 10.0),
             child: Text(
               "Answer: ${_answer.capitalize()}",
-              style: Theme.of(context).textTheme.headline6,
+              style: Theme.of(context).textTheme.headlineMedium,
             ),
           )
         ],
@@ -203,13 +207,13 @@ class _HomeViewState extends State<HomeView> {
       var f = NumberFormat("00", "en_US");
       return Column(
         children: [
-          Text("You will get one free decision in"),
+          const Text("You will get one free decision in"),
           Countdown(
             controller: _countDownController,
             seconds: _timeTillNextFree,
             build: (BuildContext context, double time) => Text(
                 "${f.format(time ~/ 3600)}:${f.format((time % 3600) ~/ 60)}:${f.format(time.toInt() % 60)}"),
-            interval: Duration(seconds: 1),
+            interval: const Duration(seconds: 1),
             onFinished: () {
               _giveFreeDecision(widget.account.bank, 0);
               setState(() {
@@ -250,6 +254,7 @@ class _HomeViewState extends State<HomeView> {
   }
 
   void _answerQuestion() async {
+    _showInterstitialAd();
     setState(() {
       _answer = _getAnswer();
     });
@@ -266,7 +271,8 @@ class _HomeViewState extends State<HomeView> {
 
     //Update the document
     widget.account.bank -= 1;
-    widget.account.nextFreeQuestion = DateTime.now().add(Duration(seconds: 20));
+    widget.account.nextFreeQuestion =
+        DateTime.now().add(const Duration(seconds: 20));
     setState(() {
       _timeTillNextFree = widget.account.nextFreeQuestion
               ?.difference((DateTime.now()))
@@ -283,5 +289,43 @@ class _HomeViewState extends State<HomeView> {
         .update(widget.account.toJson());
 
     _questionController.text = "";
+  }
+
+  _createIntersitialAd() {
+    InterstitialAd.load(
+        adUnitId: _adMobService.interstitialAdUnitId!,
+        request: const AdRequest(),
+        adLoadCallback: InterstitialAdLoadCallback(
+          onAdLoaded: (InterstitialAd ad) {
+            _interstitialAd = ad;
+          },
+          onAdFailedToLoad: (LoadAdError error) {
+            debugPrint('InterstitialAd failed to load: $error');
+            _interstitialAd = null;
+          },
+        ));
+  }
+
+  void _showInterstitialAd() {
+    if (_interstitialAd == null) {
+      print('Warning: attempt to show interstitial before loaded');
+      return;
+    }
+    _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (InterstitialAd ad) {
+        ad.dispose();
+        _createIntersitialAd();
+      },
+      onAdDismissedFullScreenContent: (InterstitialAd ad) {
+        ad.dispose();
+        _createIntersitialAd();
+      },
+      onAdFailedToShowFullScreenContent: (InterstitialAd ad, AdError error) {
+        ad.dispose();
+        _createIntersitialAd();
+      },
+    );
+    _interstitialAd!.show();
+    _interstitialAd = null;
   }
 }
