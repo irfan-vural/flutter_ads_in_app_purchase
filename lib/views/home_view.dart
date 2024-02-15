@@ -163,8 +163,14 @@ class _HomeViewState extends State<HomeView> {
             ),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
             onPressed: _askBtnActive == true ? _answerQuestion : null,
-            child: const Text("Ask"),
+            child: const Text(
+              "Ask",
+              style: TextStyle(color: Colors.white),
+            ),
           ),
           _questionAndAnswer()
         ],
