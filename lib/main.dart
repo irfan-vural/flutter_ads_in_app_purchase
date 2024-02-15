@@ -3,8 +3,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_ads_purchase_bestcase/firebase_options.dart';
 import 'package:flutter_ads_purchase_bestcase/models/Account.dart';
+import 'package:flutter_ads_purchase_bestcase/services/admob_service.dart';
 import 'package:flutter_ads_purchase_bestcase/services/auth_service.dart';
 import 'package:flutter_ads_purchase_bestcase/views/home_view.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
 
 Future<void> main() async {
@@ -13,8 +15,12 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   await AuthService().getOrCreateUser();
+  final initAdFuture = MobileAds.instance.initialize();
+  final adMobService = AdMobService(initAdFuture);
+
   runApp(MultiProvider(providers: [
     Provider.value(value: AuthService()),
+    Provider.value(value: adMobService),
   ], child: const DeciderApp()));
 }
 
